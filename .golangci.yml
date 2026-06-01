@@ -1,0 +1,46 @@
+---
+version: "2"
+
+run:
+  timeout: 30s
+  tests: false
+
+linters:
+  default: none
+  enable:
+    # core correctness
+    - govet
+    - staticcheck
+    - errcheck
+    - errorlint
+    - err113
+
+    # logic & runtime safety
+    - copyloopvar
+    - forcetypeassert
+    - nilnil
+    - nilerr
+
+    # code quality & maintainability
+    - revive
+    - gocritic
+    - goconst
+
+  settings:
+    revive:
+      rules:
+        - name: package-comments
+          disabled: true
+    gocritic:
+      disable-all: false
+      enabled-checks:
+        - hugeParam
+        - rangeValCopy
+      settings:
+        hugeParam:
+          sizeThreshold: 80
+        rangeValCopy:
+          sizeThreshold: 512
+    goconst:
+      min-len: 2
+      min-occurrences: 3
