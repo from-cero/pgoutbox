@@ -5,6 +5,21 @@ import (
 	"time"
 )
 
+type Event struct {
+	ID          int64
+	DataID      string
+	DataType    string
+	EventType   string
+	Topic       string
+	Payload     json.RawMessage
+	Status      string
+	RetryCount  int
+	MaxRetries  int
+	ScheduledAt time.Time
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
 const (
 	// EventPending is the initial state of an event when it is created and stored in the outbox.
 	// It indicates that the event is waiting to be processed by any outbox relay worker.
@@ -21,18 +36,3 @@ const (
 	// EventFailed indicates the event has exhausted its retry budget and will no longer be processed.
 	EventFailed = "failed"
 )
-
-type Event struct {
-	ID          int64
-	DataID      string
-	DataType    string
-	EventType   string
-	Topic       string
-	Payload     json.RawMessage
-	Status      string
-	RetryCount  int
-	MaxRetries  int
-	ScheduledAt time.Time
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-}
