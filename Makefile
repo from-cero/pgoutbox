@@ -1,4 +1,5 @@
-MODULE = github.com/from-cero/pgoutbox
+ROOT_MODULE = github.com/from-cero/pgoutbox
+MODULES = .
 
 format-tools:
 	go install mvdan.cc/gofumpt@latest
@@ -7,9 +8,9 @@ format-tools:
 	go install github.com/segmentio/golines@latest
 
 format:
-	go mod tidy
+	@for m in $(MODULES); do (cd $$m && go mod tidy) || exit 1; done
 	goimports -w .
-	gci write --custom-order -s standard -s default -s "prefix($(MODULE))" -s blank \
+	gci write --custom-order -s standard -s default -s "prefix($(ROOT_MODULE))" -s blank \
 		--no-lex-order --skip-generated --skip-vendor .
 	golines -w -m 120 .
 	gofumpt -l -w -extra .
@@ -18,10 +19,10 @@ lint-tools:
 	curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b $$(go env GOPATH)/bin v2.12.1
 
 lint:
-	golangci-lint run ./...
+	@for m in $(MODULES); do echo "==> lint $$m" && (cd $$m && golangci-lint run ./...) || exit 1; done
 
 test:
-	go test -race -cover ./...
+	@for m in $(MODULES); do echo "==> test $$m" && (cd $$m && go test -race -cover ./...) || exit 1; done
 
 test-coverage:
 	go test -race -coverprofile=coverage.out ./... && go tool cover -html=coverage.out

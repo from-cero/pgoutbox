@@ -6,18 +6,17 @@ import (
 )
 
 type Event struct {
-	ID          int64
-	DataID      string
-	DataType    string
-	EventType   string
-	Topic       string
-	Payload     json.RawMessage
-	Status      string
-	RetryCount  int
-	MaxRetries  int
-	ScheduledAt time.Time
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID           int64
+	Type         string
+	Topic        string
+	Payload      json.RawMessage
+	Status       string
+	AttemptCount int // publish attempts consumed (delivery retry budget)
+	MaxAttempts  int
+	ReapCount    int // stuck-recovery reschedules consumed (infrastructure budget)
+	ScheduledAt  time.Time
+	CreatedAt    time.Time
+	UpdatedAt    time.Time // doubles as the claim timestamp while processing
 }
 
 const (
