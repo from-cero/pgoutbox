@@ -187,4 +187,4 @@ The `relay/publisher/noop` package provides a no-op implementation for tests.
 
 ## License
 
-TODO: add a license.
+Released under the [MIT License](LICENSE).
