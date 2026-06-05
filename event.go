@@ -5,18 +5,19 @@ import (
 	"time"
 )
 
+// Event represents a single outbox message pending delivery to a message broker.
 type Event struct {
 	ID           int64
 	Type         string
 	Topic        string
 	Payload      json.RawMessage
 	Status       string
-	AttemptCount int // publish attempts consumed (delivery retry budget)
+	AttemptCount int
 	MaxAttempts  int
-	ReapCount    int // stuck-recovery reschedules consumed (infrastructure budget)
+	ReapCount    int
 	ScheduledAt  time.Time
 	CreatedAt    time.Time
-	UpdatedAt    time.Time // doubles as the claim timestamp while processing
+	UpdatedAt    time.Time
 }
 
 const (
@@ -35,3 +36,15 @@ const (
 	// EventFailed indicates the event has exhausted its retry budget and will no longer be processed.
 	EventFailed = "failed"
 )
+
+func (e *Event) fillDefaultsIfNeeded(maxAttempts int) {
+	if e.Status == "" {
+		e.Status = EventPending
+	}
+	if e.MaxAttempts == 0 {
+		e.MaxAttempts = maxAttempts
+	}
+	if e.ScheduledAt.IsZero() {
+		e.ScheduledAt = time.Now()
+	}
+}
