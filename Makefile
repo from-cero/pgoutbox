@@ -1,7 +1,8 @@
 ROOT_MODULE = github.com/from-cero/pgoutbox
 MODULES = . \
 	relay/publisher/kafka \
-	relay/publisher/redpanda
+	relay/publisher/redpanda \
+	internal/example
 
 format-tools:
 	go install mvdan.cc/gofumpt@latest

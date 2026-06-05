@@ -5,5 +5,7 @@
 *.log
 *.tmp
 
+.env
+
 go.work
 go.work.sum
