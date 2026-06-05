@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/from-cero/pgoutbox"
 )
 
@@ -166,7 +168,7 @@ func (r *Relay) markFailed(ctx context.Context, q pgoutbox.Querier, failures []f
 		)
 		return 0
 	}
-	updatedSet := make(map[int64]struct{}, len(updatedIDs))
+	updatedSet := make(map[uuid.UUID]struct{}, len(updatedIDs))
 	for _, id := range updatedIDs {
 		updatedSet[id] = struct{}{}
 	}
@@ -211,7 +213,7 @@ func (r *Relay) failPermanently(ctx context.Context, q pgoutbox.Querier, failure
 		)
 		return 0
 	}
-	updatedSet := make(map[int64]struct{}, len(updatedIDs))
+	updatedSet := make(map[uuid.UUID]struct{}, len(updatedIDs))
 	for _, id := range updatedIDs {
 		updatedSet[id] = struct{}{}
 	}
@@ -260,11 +262,11 @@ func (r *Relay) resolveTopic(e *pgoutbox.Event) error {
 		return nil
 	}
 	if r.cfg.topicResolver == nil {
-		return Permanent(fmt.Errorf("resolve topic for event %d: %w", e.ID, ErrNoTopic))
+		return Permanent(fmt.Errorf("resolve topic for event %s: %w", e.ID, ErrNoTopic))
 	}
 	topic := r.cfg.topicResolver(e)
 	if topic == "" {
-		return Permanent(fmt.Errorf("resolve topic for event %d: %w", e.ID, ErrNoTopic))
+		return Permanent(fmt.Errorf("resolve topic for event %s: %w", e.ID, ErrNoTopic))
 	}
 	e.Topic = topic
 	return nil
@@ -277,20 +279,20 @@ func (r *Relay) backoffFor(attempt int) time.Duration {
 	return r.cfg.backoff(attempt)
 }
 
-func extractEventIDs(events []*pgoutbox.Event) []int64 {
-	ids := make([]int64, len(events))
+func extractEventIDs(events []*pgoutbox.Event) []uuid.UUID {
+	ids := make([]uuid.UUID, len(events))
 	for i, e := range events {
 		ids[i] = e.ID
 	}
 	return ids
 }
 
-func subtractIDs(want, got []int64) []int64 {
-	gotSet := make(map[int64]struct{}, len(got))
+func subtractIDs(want, got []uuid.UUID) []uuid.UUID {
+	gotSet := make(map[uuid.UUID]struct{}, len(got))
 	for _, id := range got {
 		gotSet[id] = struct{}{}
 	}
-	var missingIDs []int64
+	var missingIDs []uuid.UUID
 	for _, id := range want {
 		if _, ok := gotSet[id]; !ok {
 			missingIDs = append(missingIDs, id)

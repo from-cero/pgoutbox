@@ -3,11 +3,13 @@ package pgoutbox
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // Event represents a single outbox message pending delivery to a message broker.
 type Event struct {
-	ID           int64
+	ID           uuid.UUID
 	Type         string
 	Topic        string
 	Payload      json.RawMessage
