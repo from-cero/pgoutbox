@@ -15,7 +15,7 @@ import (
 type Relay struct {
 	s   Store
 	pub publisher.Publisher
-	cfg config
+	cfg *config
 	log *slog.Logger
 }
 

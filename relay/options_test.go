@@ -80,10 +80,30 @@ func TestApplyOptions(t *testing.T) {
 			t.Error("topicResolver not set")
 		}
 	})
+
+	t.Run("returns an independent config without mutating the default", func(t *testing.T) {
+		// poller/reaper/janitor are value fields, so applyOptions deep-copies
+		// them and an option must not leak into the package-global defaultConfig
+		// or bleed across calls. This guards against making the sub-config fields
+		// pointers again, which would alias the shared default.
+		want := defaultConfig.poller.batchSize
+		cfg := applyOptions([]Option{WithPollerBatchSize(want + 1)})
+		if cfg.poller.batchSize != want+1 {
+			t.Fatalf("option not applied: poller.batchSize = %d, want %d", cfg.poller.batchSize, want+1)
+		}
+		if defaultConfig.poller.batchSize != want {
+			t.Errorf("applyOptions mutated defaultConfig: poller.batchSize = %d, want %d",
+				defaultConfig.poller.batchSize, want)
+		}
+		if again := applyOptions(nil); again.poller.batchSize != want {
+			t.Errorf("config not independent across calls: poller.batchSize = %d, want %d",
+				again.poller.batchSize, want)
+		}
+	})
 }
 
 func TestConfigValidate(t *testing.T) {
-	valid := func() config { return defaultConfig }
+	valid := func() *config { return applyOptions(nil) }
 
 	t.Run("default config is valid", func(t *testing.T) {
 		c := valid()
@@ -119,7 +139,7 @@ func TestConfigValidate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := valid()
-			tt.mutate(&c)
+			tt.mutate(c)
 			err := c.validate()
 			if !errors.Is(err, tt.wantErr) {
 				t.Fatalf("validate() = %v, want errors.Is %v", err, tt.wantErr)

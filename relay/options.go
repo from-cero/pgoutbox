@@ -157,12 +157,12 @@ var defaultConfig = config{
 	backoff: DefaultBackoff,
 }
 
-func applyOptions(opts []Option) config {
+func applyOptions(opts []Option) *config {
 	cfg := defaultConfig
 	for _, o := range opts {
 		o(&cfg)
 	}
-	return cfg
+	return &cfg
 }
 
 func (c *config) validate() error {

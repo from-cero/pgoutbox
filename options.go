@@ -19,12 +19,12 @@ var defaultConfig = config{
 	maxAttempts: 3,
 }
 
-func applyOptions(opts []Option) config {
+func applyOptions(opts []Option) *config {
 	cfg := defaultConfig
 	for _, o := range opts {
 		o(&cfg)
 	}
-	return cfg
+	return &cfg
 }
 
 func (c *config) validate() error {

@@ -39,7 +39,7 @@ type Transactor interface {
 // Outbox provides methods to enqueue events and execute functions within transactions.
 type Outbox struct {
 	s   Store
-	cfg config
+	cfg *config
 }
 
 // New creates a new Outbox. s must not be nil.
