@@ -60,7 +60,7 @@ func (p *Publisher) PublishBatch(ctx context.Context, events []*pgoutbox.Event) 
 			Topic: e.Topic,
 			Value: e.Payload,
 			Headers: []kgo.RecordHeader{
-				{Key: "event_id", Value: []byte(e.ID.String())},
+				{Key: "event_id", Value: []byte(e.IDString())},
 				{Key: "type", Value: []byte(e.Type)},
 			},
 		}

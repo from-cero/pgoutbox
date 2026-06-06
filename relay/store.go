@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/from-cero/pgoutbox"
 )
@@ -15,19 +15,19 @@ type Store interface {
 	FetchPending(ctx context.Context, q pgoutbox.Querier, batchSize int) ([]*pgoutbox.Event, error)
 
 	// MarkProcessed marks events as processed. Returns the IDs that were actually updated.
-	MarkProcessed(ctx context.Context, q pgoutbox.Querier, es []*pgoutbox.Event) ([]uuid.UUID, error)
+	MarkProcessed(ctx context.Context, q pgoutbox.Querier, es []*pgoutbox.Event) ([]pgtype.UUID, error)
 
 	// MarkFailed decrements remaining attempts and reschedules with the given backoffs,
 	// or transitions to failed if the retry budget is exhausted.
 	MarkFailed(ctx context.Context, q pgoutbox.Querier, es []*pgoutbox.Event, backoffs []time.Duration) (
-		[]uuid.UUID, error,
+		[]pgtype.UUID, error,
 	)
 
 	// Fail marks events as failed without a backoff.
-	Fail(ctx context.Context, q pgoutbox.Querier, es []*pgoutbox.Event) ([]uuid.UUID, error)
+	Fail(ctx context.Context, q pgoutbox.Querier, es []*pgoutbox.Event) ([]pgtype.UUID, error)
 
 	// Unclaim returns claimed events to pending, making them available for other pollers.
-	Unclaim(ctx context.Context, q pgoutbox.Querier, es []*pgoutbox.Event) ([]uuid.UUID, error)
+	Unclaim(ctx context.Context, q pgoutbox.Querier, es []*pgoutbox.Event) ([]pgtype.UUID, error)
 
 	// ReapStuck identifies events that have been claimed for processing
 	// but have not been marked as processed or failed within the specified stuckTimeout.

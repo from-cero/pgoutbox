@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/from-cero/pgoutbox"
 )
@@ -38,7 +38,7 @@ func TestMarkProcessed(t *testing.T) {
 
 	t.Run("events not updated count as lost", func(t *testing.T) {
 		e1, e2 := newEvent(), newEvent()
-		s := &fakeStore{markProcessedIDs: []uuid.UUID{e1.ID}} // e2 missing
+		s := &fakeStore{markProcessedIDs: []pgtype.UUID{e1.ID}} // e2 missing
 		r, _ := newTestRelay(t, s, &fakePublisher{})
 		if lost := r.markProcessed(ctx, nil, []*pgoutbox.Event{e1, e2}); lost != 1 {
 			t.Errorf("lost = %d, want 1", lost)
@@ -71,7 +71,7 @@ func TestMarkFailed(t *testing.T) {
 		exhausted.AttemptCount = 2
 		lost := newEvent() // not in updated set: lost to the claim fence
 
-		s := &fakeStore{markFailedIDs: []uuid.UUID{retry.ID, exhausted.ID}}
+		s := &fakeStore{markFailedIDs: []pgtype.UUID{retry.ID, exhausted.ID}}
 		r, _ := newTestRelay(t, s, &fakePublisher{})
 
 		got := r.markFailed(ctx, nil, failuresFor(retry, exhausted, lost))
@@ -101,7 +101,7 @@ func TestFailPermanently(t *testing.T) {
 
 	t.Run("events not updated count as lost", func(t *testing.T) {
 		parked, lost := newEvent(), newEvent()
-		s := &fakeStore{failIDs: []uuid.UUID{parked.ID}} // lost missing
+		s := &fakeStore{failIDs: []pgtype.UUID{parked.ID}} // lost missing
 		r, _ := newTestRelay(t, s, &fakePublisher{})
 		if got := r.failPermanently(ctx, nil, failuresFor(parked, lost)); got != 1 {
 			t.Errorf("lost = %d, want 1", got)
@@ -129,7 +129,7 @@ func TestUnclaimEvents(t *testing.T) {
 
 	t.Run("returns the number unclaimed by the store", func(t *testing.T) {
 		e1, e2 := newEvent(), newEvent()
-		s := &fakeStore{unclaimIDs: []uuid.UUID{e1.ID, e2.ID}}
+		s := &fakeStore{unclaimIDs: []pgtype.UUID{e1.ID, e2.ID}}
 		r, _ := newTestRelay(t, s, &fakePublisher{})
 		if n := r.unclaimEvents(ctx, nil, failuresFor(e1, e2)); n != 2 {
 			t.Errorf("unclaimed = %d, want 2", n)

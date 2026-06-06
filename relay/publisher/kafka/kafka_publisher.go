@@ -64,7 +64,7 @@ func (p *Publisher) PublishBatch(ctx context.Context, events []*pgoutbox.Event) 
 			Topic: e.Topic,
 			Value: e.Payload,
 			Headers: []kafka.Header{
-				{Key: "event_id", Value: []byte(e.ID.String())},
+				{Key: "event_id", Value: []byte(e.IDString())},
 				{Key: "type", Value: []byte(e.Type)},
 			},
 		}
@@ -98,7 +98,7 @@ func (p *Publisher) PublishBatch(ctx context.Context, events []*pgoutbox.Event) 
 			if headerValue(msgs[i].Headers, "event_id") == badID {
 				results[i] = relay.Permanent(fmt.Errorf("write kafka message: %w", err))
 			} else {
-				results[i] = fmt.Errorf("abort batch for event %s: %w", events[i].ID, errBatchAborted)
+				results[i] = fmt.Errorf("abort batch for event %s: %w", events[i].IDString(), errBatchAborted)
 			}
 		}
 		return results

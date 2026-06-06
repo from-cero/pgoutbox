@@ -47,14 +47,8 @@ if err := store.EnsureSchema(ctx, pool); err != nil {
 }
 ```
 
-The event ID is a `uuid.UUID`. `pgx` needs the codec registered on every
-connection, so set it on your pool config:
-
-```go
-cfg, _ := pgxpool.ParseConfig(dsn)
-cfg.AfterConnect = postgres.RegisterTypes
-pool, _ := pgxpool.NewWithConfig(ctx, cfg)
-```
+The event ID is a `pgtype.UUID`, which `pgx` encodes and decodes natively, so no
+extra codec registration is needed.
 
 ### 2. Enqueue events inside your transaction
 

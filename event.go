@@ -2,14 +2,15 @@ package pgoutbox
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // Event represents a single outbox message pending delivery to a message broker.
 type Event struct {
-	ID           uuid.UUID
+	ID           pgtype.UUID
 	Type         string
 	Topic        string
 	Payload      json.RawMessage
@@ -38,6 +39,17 @@ const (
 	// EventFailed indicates the event has exhausted its retry budget and will no longer be processed.
 	EventFailed = "failed"
 )
+
+// IDString returns the canonical hyphenated string form of the event id, or an
+// empty string when the id is not set. pgtype.UUID has no String method, so use
+// this when an event id is needed as text (broker headers, log fields).
+func (e *Event) IDString() string {
+	if !e.ID.Valid {
+		return ""
+	}
+	b := e.ID.Bytes
+	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
+}
 
 func (e *Event) fillDefaultsIfNeeded(maxAttempts int) {
 	if e.Status == "" {

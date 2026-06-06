@@ -2,17 +2,25 @@ package postgres
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/from-cero/pgoutbox"
 )
+
+// newID returns a random, valid pgtype.UUID for use as a test event id.
+func newID() pgtype.UUID {
+	var b [16]byte
+	_, _ = rand.Read(b[:])
+	return pgtype.UUID{Bytes: b, Valid: true}
+}
 
 // fakeQuerier is a minimal pgoutbox.Querier for exercising the non-SQL logic in
 // Store: argument preparation, early returns, and error wrapping.
@@ -59,7 +67,7 @@ func TestDurationToInterval(t *testing.T) {
 }
 
 func TestSplitClaims(t *testing.T) {
-	id1, id2 := uuid.New(), uuid.New()
+	id1, id2 := newID(), newID()
 	t1 := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	t2 := time.Date(2026, 1, 2, 0, 0, 0, 0, time.UTC)
 	events := []*pgoutbox.Event{
@@ -105,10 +113,10 @@ func TestStoreInsert(t *testing.T) {
 	})
 
 	t.Run("scans returned columns back into the event", func(t *testing.T) {
-		wantID := uuid.New()
+		wantID := newID()
 		created := time.Date(2026, 6, 6, 12, 0, 0, 0, time.UTC)
 		q := &fakeQuerier{row: fakeRow{scan: func(dest ...any) error {
-			*dest[0].(*uuid.UUID) = wantID
+			*dest[0].(*pgtype.UUID) = wantID
 			*dest[1].(*int) = 1 // attempt_count
 			*dest[2].(*int) = 2 // reap_count
 			*dest[3].(*time.Time) = created
@@ -142,7 +150,7 @@ func TestStoreInsert(t *testing.T) {
 
 func TestStoreMarkFailedLengthMismatch(t *testing.T) {
 	s := NewStore("outbox")
-	events := []*pgoutbox.Event{{ID: uuid.New()}}
+	events := []*pgoutbox.Event{{ID: newID()}}
 	backoffs := []time.Duration{time.Second, 2 * time.Second}
 
 	_, err := s.MarkFailed(context.Background(), &fakeQuerier{}, events, backoffs)
@@ -155,7 +163,7 @@ func TestStoreQueryErrorsAreWrapped(t *testing.T) {
 	s := NewStore("outbox")
 	sentinel := errors.New("query down")
 	ctx := context.Background()
-	ev := []*pgoutbox.Event{{ID: uuid.New()}}
+	ev := []*pgoutbox.Event{{ID: newID()}}
 
 	tests := []struct {
 		name string

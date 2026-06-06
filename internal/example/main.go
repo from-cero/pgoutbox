@@ -116,9 +116,6 @@ func connect(ctx context.Context, cfg Config, logger *slog.Logger) (*pgxpool.Poo
 	if cfg.Trace {
 		poolCfg.ConnConfig.Tracer = &sqlTracer{logger: logger}
 	}
-	// The event id is a google/uuid.UUID, which pgx cannot encode or decode
-	// until the codec is registered on each connection.
-	poolCfg.AfterConnect = postgres.RegisterTypes
 
 	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {

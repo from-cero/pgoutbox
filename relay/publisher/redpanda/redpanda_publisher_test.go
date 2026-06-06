@@ -2,16 +2,24 @@ package redpanda
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"testing"
 
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"
 
 	"github.com/from-cero/pgoutbox"
 	"github.com/from-cero/pgoutbox/relay"
 )
+
+// newID returns a random, valid pgtype.UUID for use as a test event id.
+func newID() pgtype.UUID {
+	var b [16]byte
+	_, _ = rand.Read(b[:])
+	return pgtype.UUID{Bytes: b, Valid: true}
+}
 
 // fakeClient is a recordProducer that records the produced records and returns
 // canned per-record results, so PublishBatch's mapping is testable without a broker.
@@ -37,7 +45,7 @@ func (c *fakeClient) Close() { c.closed = true }
 
 func eventWithID(topic string) *pgoutbox.Event {
 	return &pgoutbox.Event{
-		ID:      uuid.New(),
+		ID:      newID(),
 		Type:    "test.type",
 		Topic:   topic,
 		Payload: []byte(`{"k":"v"}`),
@@ -74,8 +82,8 @@ func TestPublishBatchSuccess(t *testing.T) {
 	if c.got[0].Topic != "topic-a" || string(c.got[0].Value) != `{"k":"v"}` {
 		t.Errorf("record[0] = %+v, unexpected topic/value", c.got[0])
 	}
-	if id := headerValue(c.got[0].Headers, "event_id"); id != e1.ID.String() {
-		t.Errorf("event_id header = %q, want %q", id, e1.ID.String())
+	if id := headerValue(c.got[0].Headers, "event_id"); id != e1.IDString() {
+		t.Errorf("event_id header = %q, want %q", id, e1.IDString())
 	}
 	if typ := headerValue(c.got[0].Headers, "type"); typ != "test.type" {
 		t.Errorf("type header = %q, want test.type", typ)
@@ -142,7 +150,10 @@ func TestNewPublisher(t *testing.T) {
 	if p == nil {
 		t.Fatal("NewPublisher returned nil")
 	}
-	p.Close()
+	err = p.Close()
+	if err != nil {
+		return
+	}
 }
 
 func TestNewPublisherWithClient(t *testing.T) {
@@ -154,5 +165,8 @@ func TestNewPublisherWithClient(t *testing.T) {
 	if p == nil {
 		t.Fatal("NewPublisherWithClient returned nil")
 	}
-	p.Close()
+	err = p.Close()
+	if err != nil {
+		return
+	}
 }

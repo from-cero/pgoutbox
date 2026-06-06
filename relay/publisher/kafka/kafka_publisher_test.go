@@ -2,15 +2,23 @@ package kafka
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"testing"
 
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/segmentio/kafka-go"
 
 	"github.com/from-cero/pgoutbox"
 	"github.com/from-cero/pgoutbox/relay"
 )
+
+// newID returns a random, valid pgtype.UUID for use as a test event id.
+func newID() pgtype.UUID {
+	var b [16]byte
+	_, _ = rand.Read(b[:])
+	return pgtype.UUID{Bytes: b, Valid: true}
+}
 
 // fakeWriter is a messageWriter that records the messages it received and
 // returns a canned error, so PublishBatch's error mapping is exercised without a broker.
@@ -33,7 +41,7 @@ func (w *fakeWriter) Close() error {
 
 func eventWithID(topic string) *pgoutbox.Event {
 	return &pgoutbox.Event{
-		ID:      uuid.New(),
+		ID:      newID(),
 		Type:    "test.type",
 		Topic:   topic,
 		Payload: []byte(`{"k":"v"}`),
@@ -61,8 +69,8 @@ func TestPublishBatchSuccess(t *testing.T) {
 	if w.got[0].Topic != "topic-a" || string(w.got[0].Value) != `{"k":"v"}` {
 		t.Errorf("message[0] = %+v, unexpected topic/value", w.got[0])
 	}
-	if id := headerValue(w.got[0].Headers, "event_id"); id != e1.ID.String() {
-		t.Errorf("event_id header = %q, want %q", id, e1.ID.String())
+	if id := headerValue(w.got[0].Headers, "event_id"); id != e1.IDString() {
+		t.Errorf("event_id header = %q, want %q", id, e1.IDString())
 	}
 	if typ := headerValue(w.got[0].Headers, "type"); typ != "test.type" {
 		t.Errorf("type header = %q, want test.type", typ)
@@ -101,7 +109,7 @@ func TestPublishBatchMessageTooLarge(t *testing.T) {
 	// Build the too-large error so its Message carries e2's event_id header.
 	tooLarge := kafka.MessageTooLargeError{
 		Message: kafka.Message{
-			Headers: []kafka.Header{{Key: "event_id", Value: []byte(e2.ID.String())}},
+			Headers: []kafka.Header{{Key: "event_id", Value: []byte(e2.IDString())}},
 		},
 	}
 	p.writer = &fakeWriter{writeErr: tooLarge}

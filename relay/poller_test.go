@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/from-cero/pgoutbox"
 )
@@ -51,7 +51,7 @@ func TestProcessPendingEventsBatch(t *testing.T) {
 		e1, e2 := newEvent(), newEvent()
 		s := &fakeStore{
 			fetchBatches:     [][]*pgoutbox.Event{{e1, e2}},
-			markProcessedIDs: []uuid.UUID{e1.ID, e2.ID},
+			markProcessedIDs: []pgtype.UUID{e1.ID, e2.ID},
 		}
 		pub := &fakePublisher{}
 		r, stats := newTestRelay(t, s, pub)
@@ -79,7 +79,7 @@ func TestProcessPendingEventsBatch(t *testing.T) {
 		e.Topic = "" // forces resolution; no resolver configured
 		s := &fakeStore{
 			fetchBatches: [][]*pgoutbox.Event{{e}},
-			failIDs:      []uuid.UUID{e.ID},
+			failIDs:      []pgtype.UUID{e.ID},
 		}
 		pub := &fakePublisher{}
 		r, stats := newTestRelay(t, s, pub)
@@ -102,7 +102,7 @@ func TestProcessPendingEventsBatch(t *testing.T) {
 		e := newEvent()
 		s := &fakeStore{
 			fetchBatches:  [][]*pgoutbox.Event{{e}},
-			markFailedIDs: []uuid.UUID{e.ID},
+			markFailedIDs: []pgtype.UUID{e.ID},
 		}
 		pub := &fakePublisher{results: []error{errors.New("broker down")}}
 		r, stats := newTestRelay(t, s, pub, WithBackoff(func(int) time.Duration { return 7 * time.Second }))
@@ -125,7 +125,7 @@ func TestProcessPendingEventsBatch(t *testing.T) {
 		e := newEvent()
 		s := &fakeStore{
 			fetchBatches: [][]*pgoutbox.Event{{e}},
-			failIDs:      []uuid.UUID{e.ID},
+			failIDs:      []pgtype.UUID{e.ID},
 		}
 		pub := &fakePublisher{results: []error{Permanent(errors.New("auth failed"))}}
 		r, stats := newTestRelay(t, s, pub)
@@ -148,7 +148,7 @@ func TestProcessPendingEventsBatch(t *testing.T) {
 		e1, e2 := newEvent(), newEvent()
 		s := &fakeStore{
 			fetchBatches:  [][]*pgoutbox.Event{{e1, e2}},
-			markFailedIDs: []uuid.UUID{e2.ID},
+			markFailedIDs: []pgtype.UUID{e2.ID},
 		}
 		// publisher returns only one result for two events
 		pub := &fakePublisher{results: []error{nil}}
@@ -190,8 +190,8 @@ func TestProcessPendingEventsBatch(t *testing.T) {
 		e2.Topic = "" // will fail topic resolution -> ends up in failures -> unclaimed
 		s := &fakeStore{
 			fetchBatches:     [][]*pgoutbox.Event{{e1, e2}},
-			markProcessedIDs: []uuid.UUID{e1.ID},
-			unclaimIDs:       []uuid.UUID{e2.ID},
+			markProcessedIDs: []pgtype.UUID{e1.ID},
+			unclaimIDs:       []pgtype.UUID{e2.ID},
 		}
 		r, stats := newTestRelay(t, s, &fakePublisher{})
 
@@ -281,27 +281,27 @@ func TestExtractEventIDs(t *testing.T) {
 }
 
 func TestSubtractIDs(t *testing.T) {
-	a, b, c := uuid.New(), uuid.New(), uuid.New()
+	a, b, c := newID(), newID(), newID()
 
 	t.Run("returns ids in want but not in got", func(t *testing.T) {
-		missing := subtractIDs([]uuid.UUID{a, b, c}, []uuid.UUID{b})
+		missing := subtractIDs([]pgtype.UUID{a, b, c}, []pgtype.UUID{b})
 		if len(missing) != 2 {
 			t.Fatalf("missing = %v, want 2 elements", missing)
 		}
-		set := map[uuid.UUID]bool{missing[0]: true, missing[1]: true}
+		set := map[pgtype.UUID]bool{missing[0]: true, missing[1]: true}
 		if !set[a] || !set[c] {
 			t.Errorf("missing = %v, want a and c", missing)
 		}
 	})
 
 	t.Run("nothing missing yields nil", func(t *testing.T) {
-		if got := subtractIDs([]uuid.UUID{a, b}, []uuid.UUID{a, b}); got != nil {
+		if got := subtractIDs([]pgtype.UUID{a, b}, []pgtype.UUID{a, b}); got != nil {
 			t.Errorf("subtractIDs = %v, want nil", got)
 		}
 	})
 
 	t.Run("empty got yields all want", func(t *testing.T) {
-		if got := subtractIDs([]uuid.UUID{a}, nil); len(got) != 1 || got[0] != a {
+		if got := subtractIDs([]pgtype.UUID{a}, nil); len(got) != 1 || got[0] != a {
 			t.Errorf("subtractIDs = %v, want [%v]", got, a)
 		}
 	})

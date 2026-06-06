@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/from-cero/pgoutbox"
 )
@@ -168,7 +168,7 @@ func (r *Relay) markFailed(ctx context.Context, q pgoutbox.Querier, failures []f
 		)
 		return 0
 	}
-	updatedSet := make(map[uuid.UUID]struct{}, len(updatedIDs))
+	updatedSet := make(map[pgtype.UUID]struct{}, len(updatedIDs))
 	for _, id := range updatedIDs {
 		updatedSet[id] = struct{}{}
 	}
@@ -213,7 +213,7 @@ func (r *Relay) failPermanently(ctx context.Context, q pgoutbox.Querier, failure
 		)
 		return 0
 	}
-	updatedSet := make(map[uuid.UUID]struct{}, len(updatedIDs))
+	updatedSet := make(map[pgtype.UUID]struct{}, len(updatedIDs))
 	for _, id := range updatedIDs {
 		updatedSet[id] = struct{}{}
 	}
@@ -279,20 +279,20 @@ func (r *Relay) backoffFor(attempt int) time.Duration {
 	return r.cfg.backoff(attempt)
 }
 
-func extractEventIDs(events []*pgoutbox.Event) []uuid.UUID {
-	ids := make([]uuid.UUID, len(events))
+func extractEventIDs(events []*pgoutbox.Event) []pgtype.UUID {
+	ids := make([]pgtype.UUID, len(events))
 	for i, e := range events {
 		ids[i] = e.ID
 	}
 	return ids
 }
 
-func subtractIDs(want, got []uuid.UUID) []uuid.UUID {
-	gotSet := make(map[uuid.UUID]struct{}, len(got))
+func subtractIDs(want, got []pgtype.UUID) []pgtype.UUID {
+	gotSet := make(map[pgtype.UUID]struct{}, len(got))
 	for _, id := range got {
 		gotSet[id] = struct{}{}
 	}
-	var missingIDs []uuid.UUID
+	var missingIDs []pgtype.UUID
 	for _, id := range want {
 		if _, ok := gotSet[id]; !ok {
 			missingIDs = append(missingIDs, id)

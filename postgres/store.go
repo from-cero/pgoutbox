@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
@@ -149,7 +148,7 @@ func (s *Store) FetchPending(ctx context.Context, q pgoutbox.Querier, batchSize 
 }
 
 // MarkProcessed marks events as processed.
-func (s *Store) MarkProcessed(ctx context.Context, q pgoutbox.Querier, e []*pgoutbox.Event) ([]uuid.UUID, error) {
+func (s *Store) MarkProcessed(ctx context.Context, q pgoutbox.Querier, e []*pgoutbox.Event) ([]pgtype.UUID, error) {
 	sql := fmt.Sprintf(
 		`
 		UPDATE %[1]s AS o
@@ -163,7 +162,7 @@ func (s *Store) MarkProcessed(ctx context.Context, q pgoutbox.Querier, e []*pgou
 	if err != nil {
 		return nil, fmt.Errorf("mark events as processed: %w", err)
 	}
-	updatedIDs, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
+	updatedIDs, err := pgx.CollectRows(rows, pgx.RowTo[pgtype.UUID])
 	if err != nil {
 		return nil, fmt.Errorf("collect processed event ids: %w", err)
 	}
@@ -173,7 +172,7 @@ func (s *Store) MarkProcessed(ctx context.Context, q pgoutbox.Querier, e []*pgou
 // MarkFailed marks events as failed and schedules retries according to the provided backoff durations.
 func (s *Store) MarkFailed(
 	ctx context.Context, q pgoutbox.Querier, e []*pgoutbox.Event, backoffs []time.Duration,
-) ([]uuid.UUID, error) {
+) ([]pgtype.UUID, error) {
 	if len(e) != len(backoffs) {
 		return nil, ErrLengthMismatch
 	}
@@ -195,7 +194,7 @@ func (s *Store) MarkFailed(
 	if err != nil {
 		return nil, fmt.Errorf("mark events as failed: %w", err)
 	}
-	updatedIDs, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
+	updatedIDs, err := pgx.CollectRows(rows, pgx.RowTo[pgtype.UUID])
 	if err != nil {
 		return nil, fmt.Errorf("collect mark failed event ids: %w", err)
 	}
@@ -204,7 +203,7 @@ func (s *Store) MarkFailed(
 
 // Fail marks events as failed without a backoff,
 // for use when the failure is unrecoverable or retrying would be pointless.
-func (s *Store) Fail(ctx context.Context, q pgoutbox.Querier, events []*pgoutbox.Event) ([]uuid.UUID, error) {
+func (s *Store) Fail(ctx context.Context, q pgoutbox.Querier, events []*pgoutbox.Event) ([]pgtype.UUID, error) {
 	sql := fmt.Sprintf(
 		`
 		UPDATE %[1]s AS o
@@ -218,7 +217,7 @@ func (s *Store) Fail(ctx context.Context, q pgoutbox.Querier, events []*pgoutbox
 	if err != nil {
 		return nil, fmt.Errorf("fail events: %w", err)
 	}
-	updatedIDs, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
+	updatedIDs, err := pgx.CollectRows(rows, pgx.RowTo[pgtype.UUID])
 	if err != nil {
 		return nil, fmt.Errorf("collect failed event ids: %w", err)
 	}
@@ -228,7 +227,7 @@ func (s *Store) Fail(ctx context.Context, q pgoutbox.Querier, events []*pgoutbox
 // Unclaim returns claimed events to pending, making them available for other pollers.
 // It only unclaims events that are still in processing and have not been updated since they were claimed
 // when the relay's context is canceled mid-batch.
-func (s *Store) Unclaim(ctx context.Context, q pgoutbox.Querier, e []*pgoutbox.Event) ([]uuid.UUID, error) {
+func (s *Store) Unclaim(ctx context.Context, q pgoutbox.Querier, e []*pgoutbox.Event) ([]pgtype.UUID, error) {
 	sql := fmt.Sprintf(
 		`
 		UPDATE %[1]s AS o
@@ -242,7 +241,7 @@ func (s *Store) Unclaim(ctx context.Context, q pgoutbox.Querier, e []*pgoutbox.E
 	if err != nil {
 		return nil, fmt.Errorf("unclaim mid-batch canceled events: %w", err)
 	}
-	updatedIDs, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
+	updatedIDs, err := pgx.CollectRows(rows, pgx.RowTo[pgtype.UUID])
 	if err != nil {
 		return nil, fmt.Errorf("collect unclaimed event ids: %w", err)
 	}
@@ -327,8 +326,8 @@ func durationToInterval(d time.Duration) pgtype.Interval {
 	return pgtype.Interval{Microseconds: d.Microseconds(), Valid: true}
 }
 
-func splitClaims(events []*pgoutbox.Event) ([]uuid.UUID, []time.Time) {
-	ids := make([]uuid.UUID, len(events))
+func splitClaims(events []*pgoutbox.Event) ([]pgtype.UUID, []time.Time) {
+	ids := make([]pgtype.UUID, len(events))
 	claimedAts := make([]time.Time, len(events))
 	for i, e := range events {
 		ids[i] = e.ID

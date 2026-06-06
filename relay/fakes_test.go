@@ -2,15 +2,23 @@ package relay
 
 import (
 	"context"
+	"crypto/rand"
 	"io"
 	"log/slog"
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/from-cero/pgoutbox"
 )
+
+// newID returns a random, valid pgtype.UUID for use as a test event id.
+func newID() pgtype.UUID {
+	var b [16]byte
+	_, _ = rand.Read(b[:])
+	return pgtype.UUID{Bytes: b, Valid: true}
+}
 
 // discardLogger returns a logger that drops all output, keeping test logs quiet.
 func discardLogger() *slog.Logger {
@@ -25,20 +33,20 @@ type fakeStore struct {
 	fetchBatches [][]*pgoutbox.Event // returned in order, one per FetchPending call
 	fetchErr     error
 
-	markProcessedIDs []uuid.UUID
+	markProcessedIDs []pgtype.UUID
 	markProcessedErr error
 	markProcessedGot []*pgoutbox.Event
 
-	markFailedIDs      []uuid.UUID
+	markFailedIDs      []pgtype.UUID
 	markFailedErr      error
 	markFailedGot      []*pgoutbox.Event
 	markFailedBackoffs []time.Duration
 
-	failIDs []uuid.UUID
+	failIDs []pgtype.UUID
 	failErr error
 	failGot []*pgoutbox.Event
 
-	unclaimIDs []uuid.UUID
+	unclaimIDs []pgtype.UUID
 	unclaimErr error
 	unclaimGot []*pgoutbox.Event
 
@@ -70,7 +78,7 @@ func (f *fakeStore) FetchPending(_ context.Context, _ pgoutbox.Querier, _ int) (
 	return nil, nil
 }
 
-func (f *fakeStore) MarkProcessed(_ context.Context, _ pgoutbox.Querier, es []*pgoutbox.Event) ([]uuid.UUID, error) {
+func (f *fakeStore) MarkProcessed(_ context.Context, _ pgoutbox.Querier, es []*pgoutbox.Event) ([]pgtype.UUID, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.markProcessedGot = es
@@ -79,7 +87,7 @@ func (f *fakeStore) MarkProcessed(_ context.Context, _ pgoutbox.Querier, es []*p
 
 func (f *fakeStore) MarkFailed(
 	_ context.Context, _ pgoutbox.Querier, es []*pgoutbox.Event, backoffs []time.Duration,
-) ([]uuid.UUID, error) {
+) ([]pgtype.UUID, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.markFailedGot = es
@@ -87,14 +95,14 @@ func (f *fakeStore) MarkFailed(
 	return f.markFailedIDs, f.markFailedErr
 }
 
-func (f *fakeStore) Fail(_ context.Context, _ pgoutbox.Querier, es []*pgoutbox.Event) ([]uuid.UUID, error) {
+func (f *fakeStore) Fail(_ context.Context, _ pgoutbox.Querier, es []*pgoutbox.Event) ([]pgtype.UUID, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.failGot = es
 	return f.failIDs, f.failErr
 }
 
-func (f *fakeStore) Unclaim(_ context.Context, _ pgoutbox.Querier, es []*pgoutbox.Event) ([]uuid.UUID, error) {
+func (f *fakeStore) Unclaim(_ context.Context, _ pgoutbox.Querier, es []*pgoutbox.Event) ([]pgtype.UUID, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.unclaimGot = es
@@ -183,7 +191,7 @@ func (l *fakeListener) WaitForNotification(ctx context.Context) error {
 
 func newEvent() *pgoutbox.Event {
 	return &pgoutbox.Event{
-		ID:          uuid.New(),
+		ID:          newID(),
 		Type:        "test.event",
 		Topic:       "test-topic",
 		Status:      pgoutbox.EventProcessing,
