@@ -3,7 +3,7 @@ module github.com/from-cero/pgoutbox/internal/example
 go 1.26
 
 require (
-	github.com/from-cero/pgoutbox v0.0.3
+	github.com/from-cero/pgoutbox v0.1.0
 	github.com/from-cero/pgoutbox/relay/publisher/kafka v0.0.0-20260605175820-3cbd87edb753
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/joho/godotenv v1.5.1

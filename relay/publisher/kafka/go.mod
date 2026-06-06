@@ -3,7 +3,7 @@ module github.com/from-cero/pgoutbox/relay/publisher/kafka
 go 1.26
 
 require (
-	github.com/from-cero/pgoutbox v0.0.3
+	github.com/from-cero/pgoutbox v0.1.0
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/segmentio/kafka-go v0.4.51
 )
