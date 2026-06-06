@@ -18,7 +18,7 @@ a transaction that rolled back, and never lose an event for one that committed.
 - **At-least-once delivery** with per-event retry budget and configurable backoff.
 - **Pluggable publishers** - Kafka and Redpanda out of the box, plus a `noop`
   publisher for testing and a small `Publisher` interface for your own.
-- **Observability hooks** for batch and reap statistics.
+- **Observability hooks** for batch, reap, and janitor sweep statistics.
 
 ## Install
 
@@ -138,7 +138,8 @@ relay.WithHooks(relay.Hooks{
         logger.Info("batch", "claimed", s.Claimed,
             "published", s.Published, "failed", s.Failed)
     },
-    OnReap: func(s relay.ReapStats) { /* ... */ },
+    OnReap:  func(s relay.ReapStats) { /* ... */ },
+    OnSweep: func(s relay.SweepStats) { /* ... */ },
 })
 ```
 
