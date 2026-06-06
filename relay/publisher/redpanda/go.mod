@@ -3,7 +3,7 @@ module github.com/from-cero/pgoutbox/relay/publisher/redpanda
 go 1.26
 
 require (
-	github.com/from-cero/pgoutbox v0.1.0
+	github.com/from-cero/pgoutbox v0.1.1
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/twmb/franz-go v1.21.2
 )
