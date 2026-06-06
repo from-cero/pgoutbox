@@ -1,10 +1,8 @@
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/from-cero/pgoutbox v0.0.3 h1:4SNDz7Bd5PohOjSzELM60Vp4AJKXEiDksNEMzI04Em4=
-github.com/from-cero/pgoutbox v0.0.3/go.mod h1:dKibw10U5hCfgVTs+6rXwwTfadSdPEgV2pAK5VS7hzU=
-github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
-github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+github.com/from-cero/pgoutbox v0.1.0 h1:ChJcuZoy84FFkZIAdTvxnNkv3fFJJkhPRPt++tdMCi8=
+github.com/from-cero/pgoutbox v0.1.0/go.mod h1:V2D7Ua3bVkizm0BTr9IdhITrlXd3YrLwjxNrg2Wnx1A=
 github.com/jackc/pgpassfile v1.0.0 h1:/6Hmqy13Ss2zCq62VdNG8tM1wchn8zjSGOBJ6icpsIM=
 github.com/jackc/pgpassfile v1.0.0/go.mod h1:CEx0iS5ambNFdcRtxPj5JhEz+xB6uRky5eyVu/W2HEg=
 github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 h1:iCEnooe7UlwOQYpKFhBabPMi4aNAfoODPEFNiAnClxo=
